@@ -233,94 +233,92 @@ module motor(model=Nema23, size=NemaMedium, dualAxis=false, pos=[0,0,0], orienta
   axleFlatLengthBack = lookup(NemaAxleFlatLengthBack, model);
   aluHeight = lookup(NemaAluPlateHeight, model);
 
-    translate(pos) rotate(orientation) {
-      translate([-mid, -mid, 0]) 
-        difference() {
-	  union() {
+  translate(pos) rotate(orientation) {
+    translate([-mid, -mid, 0])
+      difference() {
+      union() {
+        color(stepperAluminum)
+          cube(size=[side, side, extrSize + aluHeight]);
+        color(stepperBlack)
+          translate([0,0, extrSize + aluHeight])
+          cube(size=[side, side, length - 2 * aluHeight]);
+        color(stepperAluminum)
+          translate([0,0,extrSize + length - aluHeight])
+          cube(size=[side, side, aluHeight]);
+      }
+      // Corner cutouts
+      if (lip > 0) {
+        translate([0,    0,    lip]) cylinder(h=length, r=cutR);
+        translate([side, 0,    lip]) cylinder(h=length, r=cutR);
+        translate([0,    side, lip]) cylinder(h=length, r=cutR);
+        translate([side, side, lip]) cylinder(h=length, r=cutR);
+
+      }
+
+      // Bevelled edges
+      if (roundR > 0) {
+        for (r = [0:90:405])
+          translate([mid,mid, 0])
+            rotate([0,0,r])
+            translate([mid,mid, length/2])
+            rotate([0,0,45])
+            union()
+          {
             color(stepperAluminum)
-	      cube(size=[side, side, extrSize + aluHeight]);
+              translate([0,0,-(length - aluHeight - extrSize)/2])
+              cube(size=[roundR, roundR*2, extrSize + aluHeight+0.1], center=true);
             color(stepperBlack)
-	      translate([0,0, extrSize + aluHeight])
-	      cube(size=[side, side, length - 2 * aluHeight]);
-	    color(stepperAluminum)
-	      translate([0,0,extrSize + length - aluHeight])
-	      cube(size=[side, side, aluHeight]);
-	    }
-          // Corner cutouts
-          if (lip > 0) {
-            translate([0,    0,    lip]) cylinder(h=length, r=cutR);
-            translate([side, 0,    lip]) cylinder(h=length, r=cutR);
-            translate([0,    side, lip]) cylinder(h=length, r=cutR);
-            translate([side, side, lip]) cylinder(h=length, r=cutR);
-
+              translate([0,0,extrSize])
+              cube(size=[roundR, roundR*2, length - 2 * aluHeight], center=true);
+            color(stepperAluminum)
+              translate([0,0,extrSize+(length - aluHeight)/2])
+              cube(size=[roundR, roundR*2, aluHeight + 0.1], center=true);
           }
+      }
 
-          // Bevelled edges
-          if (roundR > 0) {
-            for(r = [0:90:405])
-              translate([mid,mid, 0])
-                rotate([0,0,r])
-                translate([mid,mid, length/2])
-                rotate([0,0,45])
-                union() {
-                  color(stepperAluminum)
-                    translate([0,0,-(length - aluHeight - extrSize)/2])
-                    cube(size=[roundR, roundR*2, extrSize + aluHeight+0.1], center=true);
-                  color(stepperBlack)
-                    translate([0,0,extrSize])
-                    cube(size=[roundR, roundR*2, length - 2 * aluHeight], center=true);
-                  color(stepperAluminum)
-                    translate([0,0,extrSize+(length - aluHeight)/2])
-                    cube(size=[roundR, roundR*2, aluHeight + 0.1], center=true);
-                }
-          }
+      // Bolt holes
+      color(stepperAluminum, $fs=holeRadius/8) {
+        translate([mid+holeDist,mid+holeDist,-1*mm]) cylinder(h=holeDepth+1*mm, r=holeRadius);
+        translate([mid-holeDist,mid+holeDist,-1*mm]) cylinder(h=holeDepth+1*mm, r=holeRadius);
+        translate([mid+holeDist,mid-holeDist,-1*mm]) cylinder(h=holeDepth+1*mm, r=holeRadius);
+        translate([mid-holeDist,mid-holeDist,-1*mm]) cylinder(h=holeDepth+1*mm, r=holeRadius);
 
-          // Bolt holes
-          color(stepperAluminum, $fs=holeRadius/8) {
-            translate([mid+holeDist,mid+holeDist,-1*mm]) cylinder(h=holeDepth+1*mm, r=holeRadius);
-            translate([mid-holeDist,mid+holeDist,-1*mm]) cylinder(h=holeDepth+1*mm, r=holeRadius);
-            translate([mid+holeDist,mid-holeDist,-1*mm]) cylinder(h=holeDepth+1*mm, r=holeRadius);
-            translate([mid-holeDist,mid-holeDist,-1*mm]) cylinder(h=holeDepth+1*mm, r=holeRadius);
+      }
 
-          } 
-
-          // Grinded flat
-          color(stepperAluminum) {
-            difference() {
-              translate([-1*mm, -1*mm, -extrSize]) 
-                cube(size=[side+2*mm, side+2*mm, extrSize + 1*mm]);
-              translate([side/2, side/2, -extrSize - 1*mm]) 
-                cylinder(h=4*mm, r=extrRad);
-            }
-          }
-
-        }
-
-      // Axle
-      translate([0, 0, extrSize-axleLengthFront]) color(stepperAluminum) 
+      // Grinded flat
+      color(stepperAluminum) {
         difference() {
-                     
-          cylinder(h=axleLengthFront + 1*mm , r=axleRadius, $fs=axleRadius/10);
-
-          // Flat
-          if (axleFlatDepth > 0)
-            translate([axleRadius - axleFlatDepth,-5*mm,-extrSize*mm -(axleLengthFront-axleFlatLengthFront)] ) cube(size=[5*mm, 10*mm, axleLengthFront]);
+          translate([-1*mm, -1*mm, -extrSize])
+            cube(size=[side+2*mm, side+2*mm, extrSize + 1*mm]);
+          translate([side/2, side/2, -extrSize - 1*mm])
+            cylinder(h=4*mm, r=extrRad);
         }
-
-        if (dualAxis) {
-          translate([0, 0, length+extrSize]) color(stepperAluminum) 
-            difference() {
-                     
-              cylinder(h=axleLengthBack + 0*mm, r=axleRadius, $fs=axleRadius/10);
-
-              // Flat
-              if (axleFlatDepth > 0)
-                translate([axleRadius - axleFlatDepth,-5*mm,(axleLengthBack-axleFlatLengthBack)]) cube(size=[5*mm, 10*mm, axleLengthBack]);
-          }
-
-        }
-
+      }
     }
+
+    // Axle
+    translate([0, 0, extrSize-axleLengthFront]) color(stepperAluminum)
+      difference() {
+
+      cylinder(h=axleLengthFront + 1*mm , r=axleRadius, $fs=axleRadius/10);
+
+      // Flat
+      if (axleFlatDepth > 0)
+        translate([axleRadius - axleFlatDepth,-5*mm,-extrSize*mm -(axleLengthFront-axleFlatLengthFront)] ) cube(size=[5*mm, 10*mm, axleLengthFront]);
+    }
+
+    if (dualAxis) {
+      translate([0, 0, length+extrSize]) color(stepperAluminum)
+        difference() {
+
+        cylinder(h=axleLengthBack + 0*mm, r=axleRadius, $fs=axleRadius/10);
+
+        // Flat
+        if (axleFlatDepth > 0)
+          translate([axleRadius - axleFlatDepth,-5*mm,(axleLengthBack-axleFlatLengthBack)]) cube(size=[5*mm, 10*mm, axleLengthBack]);
+      }
+    }
+  }
 }
 
 module roundedBox(size, edgeRadius) {
