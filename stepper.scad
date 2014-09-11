@@ -44,6 +44,7 @@ NemaBackAxleLength = 15;
 NemaAxleFlatDepth = 16;
 NemaAxleFlatLengthFront = 17;
 NemaAxleFlatLengthBack = 18;
+NemaAluPlateHeight = 19;
 
 NemaA = 1;
 NemaB = 2;
@@ -73,7 +74,8 @@ Nema08 = [
                 [NemaBackAxleLength, 9.9*mm],
                 [NemaAxleFlatDepth, -1*mm],
                 [NemaAxleFlatLengthFront, 0*mm],
-                [NemaAxleFlatLengthBack, 0*mm]
+                [NemaAxleFlatLengthBack, 0*mm],
+                [NemaAluPlateHeight, 0*mm]
          ];
 
 Nema11 = [
@@ -95,7 +97,8 @@ Nema11 = [
                 [NemaBackAxleLength, 10*mm],
                 [NemaAxleFlatDepth, 0.5*mm],
                 [NemaAxleFlatLengthFront, 10*mm],
-                [NemaAxleFlatLengthBack, 9*mm]
+                [NemaAxleFlatLengthBack, 9*mm],
+                [NemaAluPlateHeight, 0*mm]
          ];
 
 Nema14 = [
@@ -117,7 +120,8 @@ Nema14 = [
                 [NemaBackAxleLength, 10*mm],
                 [NemaAxleFlatDepth, 0.5*mm],
                 [NemaAxleFlatLengthFront, 15*mm],
-                [NemaAxleFlatLengthBack, 9*mm]
+                [NemaAxleFlatLengthBack, 9*mm],
+                [NemaAluPlateHeight, 0*mm]
          ];
 
 Nema17 = [
@@ -139,7 +143,8 @@ Nema17 = [
                 [NemaBackAxleLength, 15*mm],
                 [NemaAxleFlatDepth, 0.5*mm],
                 [NemaAxleFlatLengthFront, 15*mm],
-                [NemaAxleFlatLengthBack, 14*mm]
+                [NemaAxleFlatLengthBack, 14*mm],
+                [NemaAluPlateHeight, 9*mm]
          ];
 
 Nema23 = [
@@ -161,7 +166,8 @@ Nema23 = [
                 [NemaBackAxleLength, 15.60*mm],
                 [NemaAxleFlatDepth, 0.5*mm],
                 [NemaAxleFlatLengthFront, 16*mm],
-                [NemaAxleFlatLengthBack, 14*mm]
+                [NemaAxleFlatLengthBack, 14*mm],
+                [NemaAluPlateHeight, 0*mm]
          ];
 
 Nema34 = [
@@ -183,7 +189,8 @@ Nema34 = [
                 [NemaBackAxleLength, 34*mm],
                 [NemaAxleFlatDepth, 1.20*mm],
                 [NemaAxleFlatLengthFront, 25*mm],
-                [NemaAxleFlatLengthBack, 25*mm]
+                [NemaAxleFlatLengthBack, 25*mm],
+                [NemaAluPlateHeight, 0*mm]
          ];
 
 
@@ -224,13 +231,21 @@ module motor(model=Nema23, size=NemaMedium, dualAxis=false, pos=[0,0,0], orienta
   axleFlatDepth = lookup(NemaAxleFlatDepth, model);
   axleFlatLengthFront = lookup(NemaAxleFlatLengthFront, model);
   axleFlatLengthBack = lookup(NemaAxleFlatLengthBack, model);
+  aluHeight = lookup(NemaAluPlateHeight, model);
 
-  color(stepperBlack){
     translate(pos) rotate(orientation) {
       translate([-mid, -mid, 0]) 
-        difference() {          
-          cube(size=[side, side, length + extrSize]);
- 
+        difference() {
+	  union() {
+            color(stepperAluminum)
+	      cube(size=[side, side, extrSize + aluHeight]);
+            color(stepperBlack)
+	      translate([0,0, extrSize + aluHeight])
+	      cube(size=[side, side, length - 2 * aluHeight]);
+	    color(stepperAluminum)
+	      translate([0,0,extrSize + length - aluHeight])
+	      cube(size=[side, side, aluHeight]);
+	    }
           // Corner cutouts
           if (lip > 0) {
             translate([0,    0,    lip]) cylinder(h=length, r=cutR);
@@ -240,21 +255,24 @@ module motor(model=Nema23, size=NemaMedium, dualAxis=false, pos=[0,0,0], orienta
 
           }
 
-          // Rounded edges
+          // Bevelled edges
           if (roundR > 0) {
-                translate([mid+mid, mid+mid, length/2])
-                  rotate([0,0,45])
-                    cube(size=[roundR, roundR*2, 4+length + extrSize+2], center=true);
-                translate([mid-(mid), mid+(mid), length/2])
-                  rotate([0,0,45])
-                    cube(size=[roundR*2, roundR, 4+length + extrSize+2], center=true);
-                translate([mid+mid, mid-mid, length/2])
-                  rotate([0,0,45])
-                    cube(size=[roundR*2, roundR, 4+length + extrSize+2], center=true);
-                translate([mid-mid, mid-mid, length/2])
-                  rotate([0,0,45])
-                    cube(size=[roundR, roundR*2, 4+length + extrSize+2], center=true);
-
+            for(r = [0:90:405])
+              translate([mid,mid, 0])
+                rotate([0,0,r])
+                translate([mid,mid, length/2])
+                rotate([0,0,45])
+                union() {
+                  color(stepperAluminum)
+                    translate([0,0,-(length - aluHeight - extrSize)/2])
+                    cube(size=[roundR, roundR*2, extrSize + aluHeight+0.1], center=true);
+                  color(stepperBlack)
+                    translate([0,0,extrSize])
+                    cube(size=[roundR, roundR*2, length - 2 * aluHeight], center=true);
+                  color(stepperAluminum)
+                    translate([0,0,extrSize+(length - aluHeight)/2])
+                    cube(size=[roundR, roundR*2, aluHeight + 0.1], center=true);
+                }
           }
 
           // Bolt holes
@@ -303,7 +321,6 @@ module motor(model=Nema23, size=NemaMedium, dualAxis=false, pos=[0,0,0], orienta
         }
 
     }
-  }
 }
 
 module roundedBox(size, edgeRadius) {
